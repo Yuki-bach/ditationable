@@ -7,9 +7,12 @@ import SystemPromptInput from './components/SystemPromptInput'
 import TranscriptionSettings from './components/TranscriptionSettings'
 import TranscriptionResultComponent from './components/TranscriptionResult'
 import ProgressIndicator from './components/ProgressIndicator'
+import LanguageToggle from './components/LanguageToggle'
 import { TranscriptionResult } from './lib/transcription-service'
+import { useLanguage } from './contexts/LanguageContext'
 
 export default function Home() {
+  const { t } = useLanguage()
   const [apiKey, setApiKey] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [systemPrompt, setSystemPrompt] = useState('')
@@ -21,13 +24,13 @@ export default function Home() {
 
   const handleTranscribe = async () => {
     if (!apiKey || !audioFile) {
-      alert('Please provide an API key and select an audio file')
+      alert(t.provideApiKeyAndFile)
       return
     }
     
     setIsProcessing(true)
     setProgress(0)
-    setProgressMessage('Preparing audio file...')
+    setProgressMessage(t.checkingFileSize)
     
     try {
       const formData = new FormData()
@@ -37,7 +40,7 @@ export default function Home() {
       formData.append('speakerCount', speakerCount.toString())
       
       setProgress(30)
-      setProgressMessage('Uploading audio file...')
+      setProgressMessage(t.uploadingAudio)
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -45,26 +48,26 @@ export default function Home() {
       })
       
       setProgress(60)
-      setProgressMessage('Processing transcription...')
+      setProgressMessage(t.processingTranscription)
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Transcription failed')
+        throw new Error(error.error || t.transcriptionFailed)
       }
       
       const result = await response.json()
       console.log('Transcription result:', result)
       
       setProgress(90)
-      setProgressMessage('Finalizing...')
+      setProgressMessage(t.finalizing)
       
       setResult(result as TranscriptionResult)
       setProgress(100)
-      setProgressMessage('Complete!')
+      setProgressMessage(t.complete)
       
     } catch (error) {
       console.error('Transcription error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to transcribe audio')
+      alert(error instanceof Error ? error.message : t.transcriptionFailed)
     } finally {
       setIsProcessing(false)
     }
@@ -73,24 +76,27 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Dictationable</h1>
-          <p className="text-lg text-gray-600">AI-powered audio transcription with speaker separation</p>
+        <div className="flex justify-between items-start mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{t.appTitle}</h1>
+            <p className="text-lg text-gray-600">{t.appDescription}</p>
+          </div>
+          <LanguageToggle />
         </div>
 
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">API Configuration</h2>
+            <h2 className="text-xl font-semibold mb-4">{t.apiConfiguration}</h2>
             <ApiKeyInput value={apiKey} onChange={setApiKey} />
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Audio File</h2>
+            <h2 className="text-xl font-semibold mb-4">{t.audioFile}</h2>
             <FileUpload onFileSelect={setAudioFile} />
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Transcription Settings</h2>
+            <h2 className="text-xl font-semibold mb-4">{t.transcriptionSettings}</h2>
             <TranscriptionSettings 
               speakerCount={speakerCount}
               onSpeakerCountChange={setSpeakerCount}
@@ -106,7 +112,7 @@ export default function Home() {
               disabled={isProcessing || !apiKey || !audioFile}
               className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {isProcessing ? 'Processing...' : 'Start Transcription'}
+              {isProcessing ? t.processing : t.startTranscription}
             </button>
           </div>
           
