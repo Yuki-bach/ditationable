@@ -21,7 +21,7 @@ dictationable
 - **設計方針**: 将来的に他のAI APIにも対応可能な抽象化設計
 
 ### Gemini API制約・仕様
-- **対応音声形式**: WAV, MP3, AIFF, AAC, OGG Vorbis, FLAC
+- **対応音声形式**: WAV, MP3, AIFF, AAC, OGG Vorbis, FLAC, M4A
 - **最大音声長**: 1プロンプトあたり9.5時間
 - **トークン計算**: 音声1秒 = 32トークン
 - **最大リクエストサイズ**: 20MB（インライン音声の場合）
@@ -37,7 +37,7 @@ dictationable
 ## 3. 機能要件
 
 ### 3.1 音声ファイル処理
-- **対応形式**: WAV, MP3, AIFF, AAC, OGG Vorbis, FLAC
+- **対応形式**: WAV, MP3, AIFF, AAC, OGG Vorbis, FLAC, M4A
 - **最大ファイルサイズ**:
   - インライン送信: 20MB以下
   - Files API使用: 9.5時間以下の音声長

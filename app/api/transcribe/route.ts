@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate file type
-    const validTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac']
+    const validTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/mp4', 'audio/x-m4a']
     if (!validTypes.includes(audioFile.type)) {
       return NextResponse.json(
         { error: 'Invalid audio file type' },

@@ -6,7 +6,7 @@ interface FileUploadProps {
   onFileSelect: (file: File | null) => void
 }
 
-const ACCEPTED_FORMATS = '.wav,.mp3,.aiff,.aac,.ogg,.flac'
+const ACCEPTED_FORMATS = '.wav,.mp3,.aiff,.aac,.ogg,.flac,.m4a'
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 
 export default function FileUpload({ onFileSelect }: FileUploadProps) {
@@ -29,9 +29,9 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
       
       // Validate file type
       const extension = file.name.toLowerCase().split('.').pop()
-      const validExtensions = ['wav', 'mp3', 'aiff', 'aac', 'ogg', 'flac']
+      const validExtensions = ['wav', 'mp3', 'aiff', 'aac', 'ogg', 'flac', 'm4a']
       if (!extension || !validExtensions.includes(extension)) {
-        setError('Invalid file format. Please select a WAV, MP3, AIFF, AAC, OGG, or FLAC file.')
+        setError('Invalid file format. Please select a WAV, MP3, AIFF, AAC, OGG, FLAC, or M4A file.')
         setSelectedFile(null)
         onFileSelect(null)
         return
@@ -77,7 +77,7 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
             <p className="mb-2 text-sm text-gray-500">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-500">WAV, MP3, AIFF, AAC, OGG, FLAC (MAX. 9.5 hours)</p>
+            <p className="text-xs text-gray-500">WAV, MP3, AIFF, AAC, OGG, FLAC, M4A (MAX. 9.5 hours)</p>
           </div>
         </label>
       ) : (

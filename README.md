@@ -5,7 +5,7 @@ AI-powered audio transcription with speaker separation using Google Gemini API.
 ## Features
 
 - 🎙️ Audio file transcription with speaker separation
-- 🔊 Support for multiple audio formats (WAV, MP3, AIFF, AAC, OGG, FLAC)
+- 🔊 Support for multiple audio formats (WAV, MP3, AIFF, AAC, OGG, FLAC, M4A)
 - 👥 Automatic speaker identification and labeling
 - ⏱️ Timestamp generation for each segment
 - 🔒 Secure API key handling (in-memory only)
