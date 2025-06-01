@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GeminiTranscriptionService } from '@/app/lib/gemini-transcription-service'
+import { checkRateLimit } from '@/app/lib/rate-limiter'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting by IP
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 5, 300000)) { // 5 requests per 5 minutes
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
     const formData = await request.formData()
     
     const audioFile = formData.get('audio') as File
