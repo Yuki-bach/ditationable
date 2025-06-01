@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import FileUpload from './components/FileUpload'
 import ApiKeyInput from './components/ApiKeyInput'
 import SystemPromptInput from './components/SystemPromptInput'
@@ -22,6 +22,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0)
   const [progressMessage, setProgressMessage] = useState('')
   const [result, setResult] = useState<TranscriptionResult | null>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
 
   const handleTranscribe = async () => {
     if (!apiKey || !audioFile) {
@@ -70,6 +71,11 @@ export default function Home() {
       setResult(result as TranscriptionResult)
       setProgress(100)
       setProgressMessage(t.complete)
+      
+      // Scroll to result after a short delay to ensure it's rendered
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
       
     } catch (error) {
       console.error('Transcription error:', error)
@@ -131,10 +137,12 @@ export default function Home() {
           </div>
           
           {result && audioFile && (
-            <TranscriptionResultComponent 
-              result={result} 
-              audioFileName={audioFile.name} 
-            />
+            <div ref={resultRef}>
+              <TranscriptionResultComponent 
+                result={result} 
+                audioFileName={audioFile.name} 
+              />
+            </div>
           )}
         </div>
       </div>
