@@ -25,11 +25,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
-      '@/app': path.resolve(__dirname, './app'),
+      '@': path.resolve(__dirname, './app'),
       '@/components': path.resolve(__dirname, './app/components'),
       '@/lib': path.resolve(__dirname, './app/lib'),
       '@/contexts': path.resolve(__dirname, './app/contexts'),
+      '@/app': path.resolve(__dirname, './app'),
     },
   },
 })
