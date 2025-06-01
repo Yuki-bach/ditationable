@@ -1,21 +1,30 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { TranscriptionService, TranscriptionResult, TranscriptionOptions, TranscriptionSegment } from './transcription-service'
 
-const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple speakers. Please:
-1. Identify and label different speakers (e.g., Speaker 1, Speaker 2)
-2. Include timestamps in MM:SS format at the beginning of each speaker's segment
-3. Maintain speaker consistency throughout the transcription
-4. Format the output clearly with speaker labels and timestamps
-5. Return the transcription in the following JSON format:
+const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple speakers. 
+
+IMPORTANT: Return ONLY valid JSON in the exact format below, without any markdown formatting, code blocks, or additional text:
+
 {
   "segments": [
     {
       "speaker": "Speaker 1",
       "timestamp": "00:00",
       "text": "Transcribed text here"
+    },
+    {
+      "speaker": "Speaker 2", 
+      "timestamp": "00:15",
+      "text": "Next speaker's text"
     }
   ]
-}`
+}
+
+Rules:
+1. Identify and label different speakers (Speaker 1, Speaker 2, etc.)
+2. Include timestamps in MM:SS format for each segment
+3. Maintain speaker consistency throughout
+4. Return ONLY the JSON object, no other text or formatting`
 
 export class GeminiTranscriptionService extends TranscriptionService {
   private genAI: GoogleGenerativeAI | null = null
@@ -103,9 +112,18 @@ export class GeminiTranscriptionService extends TranscriptionService {
     const response = await result.response
     const text = response.text()
     
+    // Try to extract JSON from markdown code blocks
+    let jsonContent = text
+    
+    // Remove markdown code block formatting
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+    if (jsonMatch) {
+      jsonContent = jsonMatch[1].trim()
+    }
+    
     // Parse the JSON response
     try {
-      const parsed = JSON.parse(text)
+      const parsed = JSON.parse(jsonContent)
       return {
         segments: parsed.segments || [],
         metadata: {
@@ -114,6 +132,7 @@ export class GeminiTranscriptionService extends TranscriptionService {
         }
       }
     } catch (parseError) {
+      console.log('JSON parsing failed, falling back to text parsing. Original text:', text)
       // Fallback: attempt to parse as plain text
       return this.parseTextResponse(text, options.speakerCount)
     }
@@ -137,14 +156,50 @@ export class GeminiTranscriptionService extends TranscriptionService {
   }
 
   private parseTextResponse(text: string, speakerCount: number): TranscriptionResult {
+    console.log('Parsing text response:', text)
+    
+    // If text contains what looks like broken JSON parsing, try to reconstruct
+    if (text.includes('"segments"') || text.includes('"speaker"')) {
+      // Try to extract the actual transcribed text from the broken JSON display
+      const textMatch = text.match(/"text":\s*"([^"]+)"/g)
+      if (textMatch) {
+        const extractedTexts = textMatch.map(match => {
+          const textContent = match.match(/"text":\s*"([^"]+)"/)?.[1]
+          return textContent?.replace(/\\"/g, '"') || ''
+        }).filter(t => t.length > 0)
+        
+        if (extractedTexts.length > 0) {
+          // Combine all extracted text into segments
+          const combinedText = extractedTexts.join(' ')
+          return {
+            segments: [{
+              speaker: 'Speaker 1',
+              timestamp: '00:00',
+              text: combinedText
+            }],
+            metadata: {
+              speakerCount,
+              processedAt: new Date().toISOString()
+            }
+          }
+        }
+      }
+    }
+    
     // Basic text parsing fallback
     const segments: TranscriptionSegment[] = []
     const lines = text.split('\n').filter(line => line.trim())
     
     let currentSpeaker = 'Speaker 1'
     let currentTimestamp = '00:00'
+    let textParts: string[] = []
     
     for (const line of lines) {
+      // Skip JSON-like lines
+      if (line.trim().match(/^[{}\[\]",]$/) || line.includes('"segments"') || line.includes('"speaker"')) {
+        continue
+      }
+      
       // Try to extract speaker and timestamp patterns
       const speakerMatch = line.match(/^(Speaker \d+|Person \d+|S\d+):/i)
       const timestampMatch = line.match(/\[?(\d{1,2}:\d{2})\]?/)
@@ -158,21 +213,26 @@ export class GeminiTranscriptionService extends TranscriptionService {
       }
       
       // Extract the actual text
-      let text = line
+      let lineText = line
       if (speakerMatch) {
-        text = text.replace(speakerMatch[0], '').trim()
+        lineText = lineText.replace(speakerMatch[0], '').trim()
       }
       if (timestampMatch) {
-        text = text.replace(timestampMatch[0], '').trim()
+        lineText = lineText.replace(timestampMatch[0], '').trim()
       }
       
-      if (text) {
-        segments.push({
-          speaker: currentSpeaker,
-          timestamp: currentTimestamp,
-          text
-        })
+      if (lineText && !lineText.match(/^[{}\[\]",]$/)) {
+        textParts.push(lineText)
       }
+    }
+    
+    // If we found text parts, combine them
+    if (textParts.length > 0) {
+      segments.push({
+        speaker: currentSpeaker,
+        timestamp: currentTimestamp,
+        text: textParts.join(' ')
+      })
     }
     
     return {
