@@ -65,6 +65,11 @@ export interface Translations {
   language: string
   english: string
   japanese: string
+  
+  // Preview
+  showPreview: string
+  hidePreview: string
+  actualPrompt: string
 }
 
 export const translations: Record<Language, Translations> = {
@@ -132,7 +137,12 @@ export const translations: Record<Language, Translations> = {
     // Language
     language: 'Language',
     english: 'English',
-    japanese: '日本語'
+    japanese: '日本語',
+    
+    // Preview
+    showPreview: 'Show Preview',
+    hidePreview: 'Hide Preview',
+    actualPrompt: 'Actual Prompt (with speaker count:'
   },
   ja: {
     // App title and description
@@ -198,7 +208,12 @@ export const translations: Record<Language, Translations> = {
     // Language
     language: '言語',
     english: 'English',
-    japanese: '日本語'
+    japanese: '日本語',
+    
+    // Preview
+    showPreview: 'プレビュー表示',
+    hidePreview: 'プレビュー非表示',
+    actualPrompt: '実際のプロンプト（話者数:'
   }
 }
 

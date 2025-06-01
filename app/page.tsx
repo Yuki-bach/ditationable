@@ -104,7 +104,11 @@ export default function Home() {
               onSpeakerCountChange={setSpeakerCount}
             />
             <div className="mt-4">
-              <SystemPromptInput value={systemPrompt} onChange={setSystemPrompt} />
+              <SystemPromptInput 
+                value={systemPrompt} 
+                onChange={setSystemPrompt} 
+                speakerCount={speakerCount} 
+              />
             </div>
           </div>
 
