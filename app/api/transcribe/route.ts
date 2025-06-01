@@ -37,12 +37,19 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Transcribe audio
-    const result = await service.transcribe(audioFile, {
-      apiKey,
-      systemPrompt,
-      speakerCount
-    })
+    // Transcribe audio with progress tracking
+    const result = await service.transcribe(
+      audioFile, 
+      {
+        apiKey,
+        systemPrompt,
+        speakerCount
+      },
+      (progress, message) => {
+        // Progress tracking is handled client-side for now
+        console.log(`Progress: ${progress}% - ${message}`)
+      }
+    )
     
     return NextResponse.json(result)
   } catch (error) {

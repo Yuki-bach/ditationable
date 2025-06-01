@@ -5,6 +5,9 @@ import FileUpload from './components/FileUpload'
 import ApiKeyInput from './components/ApiKeyInput'
 import SystemPromptInput from './components/SystemPromptInput'
 import TranscriptionSettings from './components/TranscriptionSettings'
+import TranscriptionResultComponent from './components/TranscriptionResult'
+import ProgressIndicator from './components/ProgressIndicator'
+import { TranscriptionResult } from './lib/transcription-service'
 
 export default function Home() {
   const [apiKey, setApiKey] = useState('')
@@ -12,6 +15,9 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState('')
   const [speakerCount, setSpeakerCount] = useState(2)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressMessage, setProgressMessage] = useState('')
+  const [result, setResult] = useState<TranscriptionResult | null>(null)
 
   const handleTranscribe = async () => {
     if (!apiKey || !audioFile) {
@@ -20,6 +26,8 @@ export default function Home() {
     }
     
     setIsProcessing(true)
+    setProgress(0)
+    setProgressMessage('Preparing audio file...')
     
     try {
       const formData = new FormData()
@@ -28,10 +36,16 @@ export default function Home() {
       formData.append('systemPrompt', systemPrompt)
       formData.append('speakerCount', speakerCount.toString())
       
+      setProgress(30)
+      setProgressMessage('Uploading audio file...')
+      
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData
       })
+      
+      setProgress(60)
+      setProgressMessage('Processing transcription...')
       
       if (!response.ok) {
         const error = await response.json()
@@ -40,7 +54,13 @@ export default function Home() {
       
       const result = await response.json()
       console.log('Transcription result:', result)
-      // TODO: Display results
+      
+      setProgress(90)
+      setProgressMessage('Finalizing...')
+      
+      setResult(result as TranscriptionResult)
+      setProgress(100)
+      setProgressMessage('Complete!')
       
     } catch (error) {
       console.error('Transcription error:', error)
@@ -89,8 +109,19 @@ export default function Home() {
               {isProcessing ? 'Processing...' : 'Start Transcription'}
             </button>
           </div>
+          
+          {result && audioFile && (
+            <TranscriptionResultComponent 
+              result={result} 
+              audioFileName={audioFile.name} 
+            />
+          )}
         </div>
       </div>
+      
+      {isProcessing && (
+        <ProgressIndicator progress={progress} message={progressMessage} />
+      )}
     </main>
   )
 }
