@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: 'Dictationable - AI Audio Transcription',
   description: 'Transcribe audio files with speaker separation powered by AI',
   robots: 'noindex, nofollow',
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export default function RootLayout({
