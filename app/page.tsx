@@ -16,6 +16,7 @@ export default function Home() {
   const [apiKey, setApiKey] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [systemPrompt, setSystemPrompt] = useState('')
+  const [userPrompt, setUserPrompt] = useState('')
   const [speakerCount, setSpeakerCount] = useState(2)
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -36,7 +37,12 @@ export default function Home() {
       const formData = new FormData()
       formData.append('audio', audioFile)
       formData.append('apiKey', apiKey)
-      formData.append('systemPrompt', systemPrompt)
+      // Combine system and user prompts
+      const finalSystemPrompt = systemPrompt.replace('{speakerCount}', speakerCount.toString())
+      const combinedPrompt = userPrompt.trim() 
+        ? `${finalSystemPrompt}\n\nAdditional context: ${userPrompt}`
+        : finalSystemPrompt
+      formData.append('systemPrompt', combinedPrompt)
       formData.append('speakerCount', speakerCount.toString())
       
       setProgress(30)
@@ -105,8 +111,10 @@ export default function Home() {
             />
             <div className="mt-4">
               <SystemPromptInput 
-                value={systemPrompt} 
-                onChange={setSystemPrompt} 
+                systemPrompt={systemPrompt}
+                onSystemPromptChange={setSystemPrompt}
+                userPrompt={userPrompt}
+                onUserPromptChange={setUserPrompt}
                 speakerCount={speakerCount} 
               />
             </div>

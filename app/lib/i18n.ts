@@ -70,6 +70,11 @@ export interface Translations {
   showPreview: string
   hidePreview: string
   actualPrompt: string
+  
+  // User prompt
+  backgroundInformation: string
+  backgroundPlaceholder: string
+  backgroundNote: string
 }
 
 export const translations: Record<Language, Translations> = {
@@ -142,7 +147,12 @@ export const translations: Record<Language, Translations> = {
     // Preview
     showPreview: 'Show Preview',
     hidePreview: 'Hide Preview',
-    actualPrompt: 'Actual Prompt (with speaker count:'
+    actualPrompt: 'Actual Prompt (with speaker count:',
+    
+    // User prompt
+    backgroundInformation: 'Background Information (Optional)',
+    backgroundPlaceholder: 'Provide context about this audio file (e.g., meeting type, participants, topic, etc.)',
+    backgroundNote: 'Add any background information that might help improve transcription accuracy'
   },
   ja: {
     // App title and description
@@ -213,7 +223,12 @@ export const translations: Record<Language, Translations> = {
     // Preview
     showPreview: 'プレビュー表示',
     hidePreview: 'プレビュー非表示',
-    actualPrompt: '実際のプロンプト（話者数:'
+    actualPrompt: '実際のプロンプト（話者数:',
+    
+    // User prompt
+    backgroundInformation: '背景情報（任意）',
+    backgroundPlaceholder: 'この音声ファイルの背景情報を入力（例：会議の種類、参加者、話題など）',
+    backgroundNote: '文字起こしの精度向上に役立つ背景情報を追加してください'
   }
 }
 

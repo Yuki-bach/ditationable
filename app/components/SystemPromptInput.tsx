@@ -30,78 +30,111 @@ Rules:
 5. Return ONLY the JSON object, no other text or formatting`
 
 interface SystemPromptInputProps {
-  value: string
-  onChange: (value: string) => void
+  systemPrompt: string
+  onSystemPromptChange: (value: string) => void
+  userPrompt: string
+  onUserPromptChange: (value: string) => void
   speakerCount: number
 }
 
-export default function SystemPromptInput({ value, onChange, speakerCount }: SystemPromptInputProps) {
+export default function SystemPromptInput({ 
+  systemPrompt, 
+  onSystemPromptChange, 
+  userPrompt, 
+  onUserPromptChange, 
+  speakerCount 
+}: SystemPromptInputProps) {
   const { t } = useLanguage()
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isSystemExpanded, setIsSystemExpanded] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
   // Initialize with default prompt if empty
   React.useEffect(() => {
-    if (!value) {
-      onChange(DEFAULT_PROMPT)
+    if (!systemPrompt) {
+      onSystemPromptChange(DEFAULT_PROMPT)
     }
-  }, [value, onChange])
+  }, [systemPrompt, onSystemPromptChange])
 
   // Generate the actual prompt that will be sent
   const getActualPrompt = () => {
-    return value.replace('{speakerCount}', speakerCount.toString())
+    const processedSystemPrompt = systemPrompt.replace('{speakerCount}', speakerCount.toString())
+    if (userPrompt.trim()) {
+      return `${processedSystemPrompt}\n\nAdditional context: ${userPrompt}`
+    }
+    return processedSystemPrompt
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <label htmlFor="system-prompt" className="block text-sm font-medium text-gray-700">
-          {t.systemPrompt}
+    <div className="space-y-4">
+      {/* User Prompt Section */}
+      <div>
+        <label htmlFor="user-prompt" className="block text-sm font-medium text-gray-700 mb-2">
+          {t.backgroundInformation}
         </label>
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-sm text-green-600 hover:text-green-800"
-          >
-            {showPreview ? t.hidePreview : t.showPreview}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            {isExpanded ? t.hide : t.customize}
-          </button>
-        </div>
+        <textarea
+          id="user-prompt"
+          value={userPrompt}
+          onChange={(e) => onUserPromptChange(e.target.value)}
+          rows={3}
+          placeholder={t.backgroundPlaceholder}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          {t.backgroundNote}
+        </p>
       </div>
-      
-      {isExpanded && (
-        <>
-          <textarea
-            id="system-prompt"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            rows={8}
-            placeholder="Enter custom instructions for the AI..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-          />
-          <p className="mt-2 text-xs text-gray-500">
-            {t.systemPromptNote} Use {'{speakerCount}'} to automatically insert the speaker count.
-          </p>
-        </>
-      )}
 
-      {showPreview && (
-        <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            {t.actualPrompt} {speakerCount})
-          </h4>
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono bg-white p-3 rounded border max-h-40 overflow-y-auto">
-            {getActualPrompt()}
-          </pre>
+      {/* System Prompt Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="system-prompt" className="block text-sm font-medium text-gray-700">
+            {t.systemPrompt} (Advanced)
+          </label>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className="text-sm text-green-600 hover:text-green-800"
+            >
+              {showPreview ? t.hidePreview : t.showPreview}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSystemExpanded(!isSystemExpanded)}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              {isSystemExpanded ? t.hide : t.customize}
+            </button>
+          </div>
         </div>
-      )}
+        
+        {isSystemExpanded && (
+          <>
+            <textarea
+              id="system-prompt"
+              value={systemPrompt}
+              onChange={(e) => onSystemPromptChange(e.target.value)}
+              rows={8}
+              placeholder="Enter custom instructions for the AI..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              {t.systemPromptNote} Use {'{speakerCount}'} to automatically insert the speaker count.
+            </p>
+          </>
+        )}
+
+        {showPreview && (
+          <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              {t.actualPrompt} {speakerCount})
+            </h4>
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono bg-white p-3 rounded border max-h-40 overflow-y-auto">
+              {getActualPrompt()}
+            </pre>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
