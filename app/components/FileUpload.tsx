@@ -91,7 +91,7 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
               <p className="text-xs text-gray-500">
                 {formatFileSize(selectedFile.size)}
                 {selectedFile.size > MAX_FILE_SIZE && (
-                  <span className="text-yellow-600 ml-2">(Will use Files API)</span>
+                  <span className="text-blue-600 ml-2">(Will use Files API)</span>
                 )}
               </p>
             </div>

@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { TranscriptionService, TranscriptionResult, TranscriptionOptions, TranscriptionSegment } from './transcription-service'
-import { AudioProcessor } from './audio-processor'
 
 const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple speakers. Please:
 1. Identify and label different speakers (e.g., Speaker 1, Speaker 2)
@@ -20,7 +19,6 @@ const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple 
 
 export class GeminiTranscriptionService extends TranscriptionService {
   private genAI: GoogleGenerativeAI | null = null
-  private audioProcessor = new AudioProcessor()
 
   async transcribe(
     audioFile: File,
@@ -31,87 +29,26 @@ export class GeminiTranscriptionService extends TranscriptionService {
       // Initialize Gemini AI with the provided API key
       this.genAI = new GoogleGenerativeAI(options.apiKey)
       
-      // Initialize audio processor
-      onProgress?.(0, 'Initializing audio processor...')
-      await this.audioProcessor.initialize()
+      // Check file size first (simpler approach for server-side)
+      onProgress?.(10, 'Checking file size...')
+      const fileSizeInMB = audioFile.size / (1024 * 1024)
       
-      // Check audio duration
-      onProgress?.(10, 'Checking audio duration...')
-      const duration = await this.audioProcessor.getAudioDuration(audioFile)
-      const maxDurationSeconds = 9.5 * 60 * 60 // 9.5 hours
-      
-      if (duration > maxDurationSeconds) {
-        // Split audio file
-        onProgress?.(20, 'Splitting audio file...')
-        const segments = await this.audioProcessor.splitAudio(
-          audioFile, 
-          maxDurationSeconds,
-          (progress) => onProgress?.(20 + progress * 0.3, `Splitting audio: ${Math.round(progress)}%`)
-        )
-        
-        // Process each segment
-        const allResults: TranscriptionSegment[] = []
-        for (let i = 0; i < segments.length; i++) {
-          const segment = segments[i]
-          onProgress?.(50 + (i / segments.length) * 40, `Processing segment ${i + 1} of ${segments.length}...`)
-          
-          const result = await this.processSegment(segment.file, segment.startTime, options)
-          allResults.push(...result.segments)
-        }
-        
-        onProgress?.(90, 'Finalizing transcription...')
-        return {
-          segments: allResults,
-          metadata: {
-            duration: this.formatTimestamp(duration),
-            speakerCount: options.speakerCount,
-            processedAt: new Date().toISOString()
-          }
-        }
+      if (fileSizeInMB <= 20) {
+        // Process inline for files under 20MB
+        onProgress?.(30, 'Processing audio file...')
+        const audioData = await this.fileToBase64(audioFile)
+        return await this.processInline(audioData, audioFile.type, options)
       } else {
-        // Process as single file
-        onProgress?.(50, 'Processing audio file...')
-        const fileSizeInMB = audioFile.size / (1024 * 1024)
-        
-        if (fileSizeInMB <= 20) {
-          const audioData = await this.fileToBase64(audioFile)
-          return await this.processInline(audioData, audioFile.type, options)
-        } else {
-          return await this.processWithFilesAPI(audioFile, options)
-        }
+        // For larger files, use Files API (splitting will be handled client-side in future)
+        onProgress?.(30, 'Processing large audio file...')
+        return await this.processWithFilesAPI(audioFile, options)
       }
     } catch (error) {
       console.error('Transcription error:', error)
       throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      // Clean up
-      await this.audioProcessor.cleanup()
     }
   }
 
-  private async processSegment(
-    segmentFile: File,
-    startTimeOffset: number,
-    options: TranscriptionOptions
-  ): Promise<TranscriptionResult> {
-    const audioData = await this.fileToBase64(segmentFile)
-    const result = await this.processInline(audioData, segmentFile.type, options)
-    
-    // Adjust timestamps to account for segment offset
-    const adjustedSegments = result.segments.map(segment => {
-      const [minutes, seconds] = segment.timestamp.split(':').map(Number)
-      const totalSeconds = minutes * 60 + seconds + startTimeOffset
-      return {
-        ...segment,
-        timestamp: this.formatTimestamp(totalSeconds)
-      }
-    })
-    
-    return {
-      ...result,
-      segments: adjustedSegments
-    }
-  }
 
   async validateApiKey(apiKey: string): Promise<boolean> {
     try {
@@ -183,9 +120,59 @@ export class GeminiTranscriptionService extends TranscriptionService {
     audioFile: File,
     options: TranscriptionOptions
   ): Promise<TranscriptionResult> {
-    // TODO: Implement Files API upload and processing
-    // This will be implemented when we have more details about the Files API
-    throw new Error('Files API processing not yet implemented')
+    try {
+      // Upload file using Files API
+      const fileManager = this.genAI!.fileManager
+      
+      // Convert File to buffer for upload
+      const arrayBuffer = await audioFile.arrayBuffer()
+      const uint8Array = new Uint8Array(arrayBuffer)
+      
+      const uploadResult = await fileManager.uploadFile(audioFile.name, {
+        mimeType: audioFile.type,
+        data: uint8Array,
+      })
+      
+      // Process with uploaded file
+      const model = this.genAI!.getGenerativeModel({ 
+        model: 'gemini-2.0-flash-exp',
+        systemInstruction: options.systemPrompt || DEFAULT_SYSTEM_PROMPT
+      })
+
+      const result = await model.generateContent([
+        {
+          fileData: {
+            mimeType: uploadResult.file.mimeType,
+            fileUri: uploadResult.file.uri
+          }
+        },
+        `Please transcribe this audio file. There are approximately ${options.speakerCount} speakers.`
+      ])
+
+      const response = await result.response
+      const text = response.text()
+      
+      // Clean up uploaded file
+      await fileManager.deleteFile(uploadResult.file.name)
+      
+      // Parse the JSON response
+      try {
+        const parsed = JSON.parse(text)
+        return {
+          segments: parsed.segments || [],
+          metadata: {
+            speakerCount: options.speakerCount,
+            processedAt: new Date().toISOString()
+          }
+        }
+      } catch (parseError) {
+        // Fallback: attempt to parse as plain text
+        return this.parseTextResponse(text, options.speakerCount)
+      }
+    } catch (error) {
+      console.error('Files API error:', error)
+      throw new Error(`Failed to process with Files API: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   private parseTextResponse(text: string, speakerCount: number): TranscriptionResult {
