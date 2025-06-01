@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { TranscriptionService, TranscriptionResult, TranscriptionOptions } from './transcription-service'
+import { TranscriptionService, TranscriptionResult, TranscriptionOptions, TranscriptionSegment } from './transcription-service'
+import { AudioProcessor } from './audio-processor'
 
 const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple speakers. Please:
 1. Identify and label different speakers (e.g., Speaker 1, Speaker 2)
@@ -19,31 +20,96 @@ const DEFAULT_SYSTEM_PROMPT = `You are transcribing an audio file with multiple 
 
 export class GeminiTranscriptionService extends TranscriptionService {
   private genAI: GoogleGenerativeAI | null = null
+  private audioProcessor = new AudioProcessor()
 
   async transcribe(
     audioFile: File,
-    options: TranscriptionOptions
+    options: TranscriptionOptions,
+    onProgress?: (progress: number, message: string) => void
   ): Promise<TranscriptionResult> {
     try {
       // Initialize Gemini AI with the provided API key
       this.genAI = new GoogleGenerativeAI(options.apiKey)
       
-      // Convert file to base64
-      const audioData = await this.fileToBase64(audioFile)
+      // Initialize audio processor
+      onProgress?.(0, 'Initializing audio processor...')
+      await this.audioProcessor.initialize()
       
-      // Check file size and determine processing method
-      const fileSizeInMB = audioFile.size / (1024 * 1024)
+      // Check audio duration
+      onProgress?.(10, 'Checking audio duration...')
+      const duration = await this.audioProcessor.getAudioDuration(audioFile)
+      const maxDurationSeconds = 9.5 * 60 * 60 // 9.5 hours
       
-      if (fileSizeInMB <= 20) {
-        // Process inline for files under 20MB
-        return await this.processInline(audioData, audioFile.type, options)
+      if (duration > maxDurationSeconds) {
+        // Split audio file
+        onProgress?.(20, 'Splitting audio file...')
+        const segments = await this.audioProcessor.splitAudio(
+          audioFile, 
+          maxDurationSeconds,
+          (progress) => onProgress?.(20 + progress * 0.3, `Splitting audio: ${Math.round(progress)}%`)
+        )
+        
+        // Process each segment
+        const allResults: TranscriptionSegment[] = []
+        for (let i = 0; i < segments.length; i++) {
+          const segment = segments[i]
+          onProgress?.(50 + (i / segments.length) * 40, `Processing segment ${i + 1} of ${segments.length}...`)
+          
+          const result = await this.processSegment(segment.file, segment.startTime, options)
+          allResults.push(...result.segments)
+        }
+        
+        onProgress?.(90, 'Finalizing transcription...')
+        return {
+          segments: allResults,
+          metadata: {
+            duration: this.formatTimestamp(duration),
+            speakerCount: options.speakerCount,
+            processedAt: new Date().toISOString()
+          }
+        }
       } else {
-        // Use Files API for larger files
-        return await this.processWithFilesAPI(audioFile, options)
+        // Process as single file
+        onProgress?.(50, 'Processing audio file...')
+        const fileSizeInMB = audioFile.size / (1024 * 1024)
+        
+        if (fileSizeInMB <= 20) {
+          const audioData = await this.fileToBase64(audioFile)
+          return await this.processInline(audioData, audioFile.type, options)
+        } else {
+          return await this.processWithFilesAPI(audioFile, options)
+        }
       }
     } catch (error) {
       console.error('Transcription error:', error)
       throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      // Clean up
+      await this.audioProcessor.cleanup()
+    }
+  }
+
+  private async processSegment(
+    segmentFile: File,
+    startTimeOffset: number,
+    options: TranscriptionOptions
+  ): Promise<TranscriptionResult> {
+    const audioData = await this.fileToBase64(segmentFile)
+    const result = await this.processInline(audioData, segmentFile.type, options)
+    
+    // Adjust timestamps to account for segment offset
+    const adjustedSegments = result.segments.map(segment => {
+      const [minutes, seconds] = segment.timestamp.split(':').map(Number)
+      const totalSeconds = minutes * 60 + seconds + startTimeOffset
+      return {
+        ...segment,
+        timestamp: this.formatTimestamp(totalSeconds)
+      }
+    })
+    
+    return {
+      ...result,
+      segments: adjustedSegments
     }
   }
 
