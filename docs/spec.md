@@ -106,6 +106,47 @@ dictationable
 - **バックエンド**: Vercel Serverless Functions
 - **音声処理**: クライアントサイド（ffmpeg.wasm）+ サーバーサイド補助
 
+### 開発環境: Docker
+- **コンテナ化**: Docker + Docker Compose による開発環境統一
+- **Node.js環境**: node:18-alpine ベースイメージ
+- **ホットリロード**: ボリュームマウントによる開発効率化
+- **環境分離**: ホストマシンを汚さないクリーンな開発環境
+
+### Docker構成
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  dictationable:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+```
+
+```dockerfile
+# Dockerfile.dev
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+```
+
+### デプロイフロー
+1. **開発**: Docker環境でローカル開発
+2. **プッシュ**: GitリポジトリにコミットPush
+3. **デプロイ**: Vercelが自動的にデプロイ（Dockerファイルは無視）
+
 ### 音声ファイル分割の技術的アプローチ
 
 #### 方針1: ffmpeg.wasm（推奨）
@@ -191,13 +232,27 @@ Web Audio APIは、Webでオーディオを制御するための強力で多様�
 
 ## 8. 実装時の技術的考慮事項
 
-### 8.1 ffmpeg.wasmセットアップ要件
-- **CORS設定**: WebAssemblyモジュールを使用するためにCORSを正しく構成する必要
-- **必要ヘッダー**:
-  - `Cross-Origin-Opener-Policy: same-origin`
-  - `Cross-Origin-Embedder-Policy: require-corp`
-  - `Cross-Origin-Resource-Policy: cross-origin`
-- **SharedArrayBuffer対応**: 先進的なWeb APIを使用するため最新ブラウザが必要
+### 8.1 開発環境セットアップ要件
+- **Docker環境**:
+  - Docker Desktop インストール必須
+  - Node.js 18 Alpine ベースイメージ使用
+  - ボリュームマウントによるホットリロード対応
+- **ffmpeg.wasmセットアップ要件**:
+  - **CORS設定**: WebAssemblyモジュールを使用するためにCORSを正しく構成する必要
+  - **必要ヘッダー（next.config.js）**:
+    ```javascript
+    async headers() {
+      return [{
+        source: '/(.*)',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'cross-origin' }
+        ]
+      }]
+    }
+    ```
+  - **SharedArrayBuffer対応**: 先進的なWeb APIを使用するため最新ブラウザが必要
 
 ### 8.2 パフォーマンス最適化
 - **Web Worker使用**: メインスレッドをブロックしないよう音声処理をWeb Workerで実行
@@ -211,3 +266,9 @@ Web Audio APIは、Webでオーディオを制御するための強力で多様�
   3. 最終的にサーバーサイド処理
 - **ユーザーフレンドリーなエラーメッセージ**
 - **処理状況の詳細表示**（ダウンロード、初期化、処理、完了）
+
+### 8.5 開発環境の利点
+- **環境統一**: チーム開発時の Node.js バージョンや依存関係の差異を防止
+- **クリーン開発**: ホストマシンを汚さず、プロジェクト間の依存関係衝突を回避
+- **CI/CD統合**: 本番環境と同じコンテナ環境でテスト実行
+- **スケーラビリティ**: 将来的な追加サービス（Redis、DB等）の統合が容易
