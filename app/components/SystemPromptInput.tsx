@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface SystemPromptInputProps {
   value: string
@@ -14,6 +15,7 @@ const DEFAULT_PROMPT = `You are transcribing an audio file with multiple speaker
 4. Format the output clearly with speaker labels and timestamps`
 
 export default function SystemPromptInput({ value, onChange }: SystemPromptInputProps) {
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleUseDefault = () => {
@@ -24,14 +26,14 @@ export default function SystemPromptInput({ value, onChange }: SystemPromptInput
     <div>
       <div className="flex items-center justify-between mb-2">
         <label htmlFor="system-prompt" className="block text-sm font-medium text-gray-700">
-          System Prompt (Optional)
+          {t.systemPromptOptional}
         </label>
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-sm text-blue-600 hover:text-blue-800"
         >
-          {isExpanded ? 'Hide' : 'Customize'}
+          {isExpanded ? t.hide : t.customize}
         </button>
       </div>
       
@@ -47,14 +49,14 @@ export default function SystemPromptInput({ value, onChange }: SystemPromptInput
           />
           <div className="mt-2 flex justify-between items-center">
             <p className="text-xs text-gray-500">
-              Customize how the AI processes and formats the transcription
+              {t.systemPromptNote}
             </p>
             <button
               type="button"
               onClick={handleUseDefault}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
-              Use default prompt
+              {t.useDefaultPrompt}
             </button>
           </div>
         </>

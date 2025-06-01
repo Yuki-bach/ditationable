@@ -1,5 +1,7 @@
 'use client'
 
+import { useLanguage } from '../contexts/LanguageContext'
+
 interface TranscriptionSettingsProps {
   speakerCount: number
   onSpeakerCountChange: (count: number) => void
@@ -9,11 +11,13 @@ export default function TranscriptionSettings({
   speakerCount, 
   onSpeakerCountChange 
 }: TranscriptionSettingsProps) {
+  const { t } = useLanguage()
+  
   return (
     <div className="space-y-4">
       <div>
         <label htmlFor="speaker-count" className="block text-sm font-medium text-gray-700 mb-2">
-          Number of Speakers
+          {t.numberOfSpeakers}
         </label>
         <div className="flex items-center space-x-4">
           <input
@@ -30,7 +34,7 @@ export default function TranscriptionSettings({
           </span>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Specify the expected number of speakers for better separation accuracy
+          {t.speakerCountNote}
         </p>
       </div>
     </div>
