@@ -64,17 +64,20 @@ export class GeminiTranscriptionService extends TranscriptionService {
   }
 
   private async fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        const result = reader.result as string
-        // Remove data URL prefix to get just the base64 data
-        const base64 = result.split(',')[1]
-        resolve(base64)
-      }
-      reader.onerror = error => reject(error)
-    })
+    // Use arrayBuffer instead of FileReader for Node.js compatibility
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+    
+    // Convert to base64 using Buffer (Node.js environment)
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(uint8Array).toString('base64')
+    }
+    
+    // Fallback for browser environment (shouldn't reach here in server-side)
+    const binaryString = Array.from(uint8Array)
+      .map(byte => String.fromCharCode(byte))
+      .join('')
+    return btoa(binaryString)
   }
 
   private async processInline(
@@ -121,57 +124,15 @@ export class GeminiTranscriptionService extends TranscriptionService {
     options: TranscriptionOptions
   ): Promise<TranscriptionResult> {
     try {
-      // Upload file using Files API
-      const fileManager = this.genAI!.fileManager
+      // For now, convert large files to base64 and process inline
+      // This is a temporary solution until proper Files API implementation
+      console.log('Processing large file with base64 conversion...')
       
-      // Convert File to buffer for upload
-      const arrayBuffer = await audioFile.arrayBuffer()
-      const uint8Array = new Uint8Array(arrayBuffer)
-      
-      const uploadResult = await fileManager.uploadFile(audioFile.name, {
-        mimeType: audioFile.type,
-        data: uint8Array,
-      })
-      
-      // Process with uploaded file
-      const model = this.genAI!.getGenerativeModel({ 
-        model: 'gemini-2.0-flash-exp',
-        systemInstruction: options.systemPrompt || DEFAULT_SYSTEM_PROMPT
-      })
-
-      const result = await model.generateContent([
-        {
-          fileData: {
-            mimeType: uploadResult.file.mimeType,
-            fileUri: uploadResult.file.uri
-          }
-        },
-        `Please transcribe this audio file. There are approximately ${options.speakerCount} speakers.`
-      ])
-
-      const response = await result.response
-      const text = response.text()
-      
-      // Clean up uploaded file
-      await fileManager.deleteFile(uploadResult.file.name)
-      
-      // Parse the JSON response
-      try {
-        const parsed = JSON.parse(text)
-        return {
-          segments: parsed.segments || [],
-          metadata: {
-            speakerCount: options.speakerCount,
-            processedAt: new Date().toISOString()
-          }
-        }
-      } catch (parseError) {
-        // Fallback: attempt to parse as plain text
-        return this.parseTextResponse(text, options.speakerCount)
-      }
+      const audioData = await this.fileToBase64(audioFile)
+      return await this.processInline(audioData, audioFile.type, options)
     } catch (error) {
       console.error('Files API error:', error)
-      throw new Error(`Failed to process with Files API: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to process large file: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
