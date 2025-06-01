@@ -4,19 +4,19 @@ import { POST, OPTIONS } from '../../../app/api/transcribe/route'
 import { createMockAudioFile } from '../../utils/test-helpers'
 
 // Mock dependencies
-vi.mock('@/app/lib/gemini-transcription-service', () => ({
+vi.mock('../../../app/lib/gemini-transcription-service', () => ({
   GeminiTranscriptionService: vi.fn().mockImplementation(() => ({
     validateApiKey: vi.fn(),
     transcribe: vi.fn()
   }))
 }))
 
-vi.mock('@/app/lib/rate-limiter', () => ({
+vi.mock('../../../app/lib/rate-limiter', () => ({
   checkRateLimit: vi.fn()
 }))
 
-import { GeminiTranscriptionService } from '@/app/lib/gemini-transcription-service'
-import { checkRateLimit } from '@/app/lib/rate-limiter'
+import { GeminiTranscriptionService } from '../../../app/lib/gemini-transcription-service'
+import { checkRateLimit } from '../../../app/lib/rate-limiter'
 
 describe('/api/transcribe', () => {
   let mockValidateApiKey: any
@@ -71,15 +71,17 @@ describe('/api/transcribe', () => {
     expect(response.status).toBe(200)
     expect(data.segments).toHaveLength(1)
     expect(data.segments[0].text).toBe('Test transcription')
-    expect(mockTranscribe).toHaveBeenCalledWith(
-      expect.any(File),
-      {
-        apiKey: 'test-api-key',
-        systemPrompt: 'Test prompt',
-        speakerCount: 2
-      },
-      expect.any(Function)
-    )
+    expect(mockTranscribe).toHaveBeenCalledTimes(1)
+    const [file, options, callback] = mockTranscribe.mock.calls[0]
+    
+    expect(file.name).toBe('test.mp3')
+    expect(file.type).toBe('audio/mp3')
+    expect(options).toEqual({
+      apiKey: 'test-api-key',
+      systemPrompt: 'Test prompt',
+      speakerCount: 2
+    })
+    expect(typeof callback).toBe('function')
   })
 
   it('returns 429 when rate limit exceeded', async () => {
@@ -222,13 +224,17 @@ describe('/api/transcribe', () => {
     
     await POST(request)
     
-    expect(mockTranscribe).toHaveBeenCalledWith(
-      expect.any(File),
-      expect.objectContaining({
-        speakerCount: 2 // Default value
-      }),
-      expect.any(Function)
-    )
+    expect(mockTranscribe).toHaveBeenCalledTimes(1)
+    const [file, options, callback] = mockTranscribe.mock.calls[0]
+    
+    expect(file.name).toBe('test-audio.mp3')
+    expect(file.type).toBe('audio/mp3')
+    expect(options).toEqual({
+      apiKey: 'test-api-key',
+      speakerCount: 2, // Default value
+      systemPrompt: null
+    })
+    expect(typeof callback).toBe('function')
   })
 
   it('handles OPTIONS request for CORS', async () => {

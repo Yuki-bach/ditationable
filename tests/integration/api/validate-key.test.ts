@@ -3,13 +3,13 @@ import { NextRequest } from 'next/server'
 import { POST } from '../../../app/api/validate-key/route'
 
 // Mock the GeminiTranscriptionService
-vi.mock('@/app/lib/gemini-transcription-service', () => ({
+vi.mock('../../../app/lib/gemini-transcription-service', () => ({
   GeminiTranscriptionService: vi.fn().mockImplementation(() => ({
     validateApiKey: vi.fn()
   }))
 }))
 
-import { GeminiTranscriptionService } from '@/app/lib/gemini-transcription-service'
+import { GeminiTranscriptionService } from '../../../app/lib/gemini-transcription-service'
 
 describe('/api/validate-key', () => {
   let mockValidateApiKey: any
