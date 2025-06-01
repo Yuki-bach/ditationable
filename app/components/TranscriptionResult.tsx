@@ -1,6 +1,7 @@
 'use client'
 
 import { TranscriptionResult } from '../lib/transcription-service'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface TranscriptionResultProps {
   result: TranscriptionResult
@@ -11,6 +12,7 @@ export default function TranscriptionResultComponent({
   result, 
   audioFileName 
 }: TranscriptionResultProps) {
+  const { t } = useLanguage()
   const downloadAsText = () => {
     const text = result.segments.map(segment => 
       `[${segment.timestamp}] ${segment.speaker}: ${segment.text}`
@@ -74,27 +76,27 @@ export default function TranscriptionResultComponent({
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Transcription Result</h2>
+          <h2 className="text-xl font-semibold">{t.transcriptionResult}</h2>
           <div className="space-x-2">
             <button
               onClick={downloadAsText}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              Download as TXT
+              {t.downloadAsTxt}
             </button>
             <button
               onClick={downloadAsJson}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Download as JSON
+              {t.downloadAsJson}
             </button>
           </div>
         </div>
         
         <div className="text-sm text-gray-600 mb-4">
-          {result.metadata.duration && <p>Duration: {result.metadata.duration}</p>}
-          <p>Speakers: {result.metadata.speakerCount}</p>
-          <p>Processed: {new Date(result.metadata.processedAt).toLocaleString()}</p>
+          {result.metadata.duration && <p>{t.duration}: {result.metadata.duration}</p>}
+          <p>{t.speakers}: {result.metadata.speakerCount}</p>
+          <p>{t.processed}: {new Date(result.metadata.processedAt).toLocaleString()}</p>
         </div>
         
         <div className="border-t pt-4 max-h-96 overflow-y-auto">
