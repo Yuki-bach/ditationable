@@ -11,30 +11,27 @@ export default function LanguageToggle() {
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <span className="text-sm text-gray-600">{t.language}:</span>
-      <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-        <button
-          onClick={() => handleLanguageChange('en')}
-          className={`px-3 py-1 text-sm transition-colors ${
-            language === 'en'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          {t.english}
-        </button>
-        <button
-          onClick={() => handleLanguageChange('ja')}
-          className={`px-3 py-1 text-sm transition-colors ${
-            language === 'ja'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          {t.japanese}
-        </button>
-      </div>
+    <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+      <button
+        onClick={() => handleLanguageChange('en')}
+        className={`px-3 py-1 text-sm font-medium transition-colors ${
+          language === 'en'
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        EN
+      </button>
+      <button
+        onClick={() => handleLanguageChange('ja')}
+        className={`px-3 py-1 text-sm font-medium transition-colors ${
+          language === 'ja'
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        JA
+      </button>
     </div>
   )
 }
