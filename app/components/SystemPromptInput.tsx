@@ -79,9 +79,6 @@ export default function SystemPromptInput({
           placeholder={t.backgroundPlaceholder}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          {t.backgroundNote}
-        </p>
       </div>
 
       {/* System Prompt Section */}
@@ -109,10 +106,7 @@ export default function SystemPromptInput({
               placeholder="Enter custom instructions for the AI..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
             />
-            <div className="mt-2 flex justify-between items-center">
-              <p className="text-xs text-gray-500">
-                {t.systemPromptNote} Use {'{speakerCount}'} to automatically insert the speaker count.
-              </p>
+            <div className="mt-2 flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowPreview(!showPreview)}
