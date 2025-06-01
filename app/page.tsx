@@ -20,8 +20,34 @@ export default function Home() {
     }
     
     setIsProcessing(true)
-    // TODO: Implement transcription logic
-    setIsProcessing(false)
+    
+    try {
+      const formData = new FormData()
+      formData.append('audio', audioFile)
+      formData.append('apiKey', apiKey)
+      formData.append('systemPrompt', systemPrompt)
+      formData.append('speakerCount', speakerCount.toString())
+      
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Transcription failed')
+      }
+      
+      const result = await response.json()
+      console.log('Transcription result:', result)
+      // TODO: Display results
+      
+    } catch (error) {
+      console.error('Transcription error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to transcribe audio')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   return (
