@@ -6,7 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:unit": "vitest run --dir app",
+    "test:integration": "vitest run --dir tests/integration",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "react": "^18",
@@ -25,6 +32,16 @@
     "eslint-config-next": "14.2.3",
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.31"
+    "postcss": "^8.4.31",
+    "vitest": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@testing-library/react": "^14.2.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@testing-library/jest-dom": "^6.4.0",
+    "jsdom": "^24.0.0",
+    "@playwright/test": "^1.44.0",
+    "msw": "^2.3.0",
+    "@vitejs/plugin-react": "^4.3.0"
   }
 }

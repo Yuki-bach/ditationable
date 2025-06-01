@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GeminiTranscriptionService } from '@/app/lib/gemini-transcription-service'
+import { GeminiTranscriptionService } from '../../lib/gemini-transcription-service'
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GeminiTranscriptionService } from '@/app/lib/gemini-transcription-service'
-import { checkRateLimit } from '@/app/lib/rate-limiter'
+import { GeminiTranscriptionService } from '../../lib/gemini-transcription-service'
+import { checkRateLimit } from '../../lib/rate-limiter'
 
 export async function POST(request: NextRequest) {
   try {

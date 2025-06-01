@@ -233,5 +233,5 @@ export const translations: Record<Language, Translations> = {
 }
 
 export function getTranslation(language: Language): Translations {
-  return translations[language]
+  return translations[language] || translations.ja
 }

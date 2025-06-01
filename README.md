@@ -62,6 +62,36 @@ docker-compose logs -f
 docker-compose exec app bash
 ```
 
+## テスト
+
+### テストの実行
+
+```bash
+# 全てのテストを実行
+npm test
+
+# 単体テストのみ実行
+npm run test:unit
+
+# 結合テストのみ実行
+npm run test:integration
+
+# E2Eテストを実行
+npm run test:e2e
+
+# カバレッジレポート生成
+npm run test:coverage
+
+# UIモードでテスト実行
+npm run test:ui
+```
+
+### テストフレームワーク
+
+- **単体テスト・結合テスト**: Vitest + React Testing Library
+- **E2Eテスト**: Playwright
+- **モック**: MSW (Mock Service Worker)
+
 ## 技術仕様
 
 ### API制限
@@ -89,13 +119,26 @@ docker-compose exec app bash
 dictationable/
 ├── app/
 │   ├── components/          # UIコンポーネント
+│   │   └── __tests__/      # コンポーネントテスト
 │   ├── contexts/           # React Context（言語設定等）
 │   ├── lib/               # ユーティリティ・サービス
+│   │   └── __tests__/      # ユーティリティテスト
 │   ├── api/               # API エンドポイント
 │   └── page.tsx           # メインページ
+├── tests/
+│   ├── e2e/               # E2Eテスト
+│   ├── integration/       # 結合テスト
+│   ├── fixtures/          # テストデータ
+│   ├── utils/             # テストユーティリティ
+│   └── setup.ts           # テスト設定
 ├── docs/
-│   └── spec.md           # 仕様書
+│   ├── spec.md           # 仕様書
+│   └── test-strategy.md  # テスト戦略
+├── .github/
+│   └── workflows/        # CI/CD設定
 ├── docker-compose.yml    # Docker設定
 ├── Dockerfile.dev        # 開発用Dockerfile
+├── vitest.config.ts      # Vitest設定
+├── playwright.config.ts  # Playwright設定
 └── README.md
 ```
