@@ -8,11 +8,9 @@ import { TranscriptionResult } from '../../lib/transcription-service'
 global.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
 global.URL.revokeObjectURL = vi.fn()
 
-// Mock document.createElement for download
-const mockClick = vi.fn()
-const mockCreateElement = vi.spyOn(document, 'createElement')
-
 describe('TranscriptionResult', () => {
+  // Mock document.createElement for download
+  const mockClick = vi.fn()
   const mockResult: TranscriptionResult = {
     segments: [
       {
@@ -40,13 +38,27 @@ describe('TranscriptionResult', () => {
 
   beforeEach(() => {
     mockClick.mockClear()
-    mockCreateElement.mockClear()
-    mockCreateElement.mockImplementation((tagName) => {
+    // Store the original createElement
+    const originalCreateElement = document.createElement.bind(document)
+    
+    // Mock createElement for anchor tags only
+    vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
       if (tagName === 'a') {
-        return { click: mockClick } as any
+        const anchor = {
+          click: mockClick,
+          href: '',
+          download: '',
+          tagName: 'A'
+        } as any
+        return anchor
       }
-      return document.createElement(tagName)
+      // Use the original createElement for other elements
+      return originalCreateElement(tagName)
     })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('renders transcription segments', () => {
@@ -104,9 +116,9 @@ describe('TranscriptionResult', () => {
       />
     )
     
-    expect(screen.getByText(/Duration.*00:00:15/)).toBeInTheDocument()
-    expect(screen.getByText(/Speakers.*2/)).toBeInTheDocument()
-    expect(screen.getByText(/Processed.*2024/)).toBeInTheDocument()
+    expect(screen.getByText(/長さ.*00:00:15/)).toBeInTheDocument()
+    expect(screen.getByText(/話者.*2/)).toBeInTheDocument()
+    expect(screen.getByText(/処理日時.*2024/)).toBeInTheDocument()
   })
 
   it('downloads as text when TXT button is clicked', () => {
@@ -124,7 +136,7 @@ describe('TranscriptionResult', () => {
       />
     )
     
-    const txtButton = screen.getByText(/Download as TXT/i)
+    const txtButton = screen.getByText(/TXTでダウンロード/i)
     fireEvent.click(txtButton)
     
     expect(mockBlob).toHaveBeenCalledWith(
@@ -150,7 +162,7 @@ describe('TranscriptionResult', () => {
       />
     )
     
-    const jsonButton = screen.getByText(/Download as JSON/i)
+    const jsonButton = screen.getByText(/JSONでダウンロード/i)
     fireEvent.click(jsonButton)
     
     expect(mockBlob).toHaveBeenCalledWith(
@@ -176,7 +188,7 @@ describe('TranscriptionResult', () => {
       />
     )
     
-    const jsonButton = screen.getByText(/Download as JSON/i)
+    const jsonButton = screen.getByText(/JSONでダウンロード/i)
     fireEvent.click(jsonButton)
     
     const parsed = JSON.parse(capturedJson)
@@ -203,8 +215,8 @@ describe('TranscriptionResult', () => {
       />
     )
     
-    expect(screen.queryByText(/Duration/)).not.toBeInTheDocument()
-    expect(screen.getByText(/Speakers.*2/)).toBeInTheDocument()
+    expect(screen.queryByText(/長さ/)).not.toBeInTheDocument()
+    expect(screen.getByText(/話者.*2/)).toBeInTheDocument()
   })
 
   it('applies correct color cycling for many speakers', () => {

@@ -13,9 +13,9 @@ describe('FileUpload', () => {
   it('renders upload area initially', () => {
     renderWithProviders(<FileUpload onFileSelect={mockOnFileSelect} />)
     
-    expect(screen.getByText(/Click to upload/i)).toBeInTheDocument()
-    expect(screen.getByText(/or drag and drop/i)).toBeInTheDocument()
-    expect(screen.getByText(/Supported formats/i)).toBeInTheDocument()
+    expect(screen.getByText(/クリックしてアップロード/i)).toBeInTheDocument()
+    expect(screen.getByText(/またはドラッグ&ドロップ/i)).toBeInTheDocument()
+    expect(screen.getByText(/WAV, MP3, AIFF, AAC, OGG, FLAC, M4A/i)).toBeInTheDocument()
   })
 
   it('accepts valid audio file formats', async () => {
@@ -25,7 +25,7 @@ describe('FileUpload', () => {
     
     for (const format of validFormats) {
       const file = createMockAudioFile(`test.${format}`, 1024 * 1024, `audio/${format}`)
-      const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+      const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
       
       fireEvent.change(input, { target: { files: [file] } })
       
@@ -42,12 +42,12 @@ describe('FileUpload', () => {
     renderWithProviders(<FileUpload onFileSelect={mockOnFileSelect} />)
     
     const file = createMockAudioFile('test.txt', 1024, 'text/plain')
-    const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+    const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
     
     fireEvent.change(input, { target: { files: [file] } })
     
     expect(mockOnFileSelect).toHaveBeenCalledWith(null)
-    expect(screen.getByText(/Invalid file format/i)).toBeInTheDocument()
+    expect(screen.getByText(/無効なファイル形式です/i)).toBeInTheDocument()
   })
 
   it('displays file size correctly', () => {
@@ -55,7 +55,7 @@ describe('FileUpload', () => {
     
     // Test KB display
     const smallFile = createMockAudioFile('small.mp3', 512 * 1024) // 512 KB
-    const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+    const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
     
     fireEvent.change(input, { target: { files: [smallFile] } })
     expect(screen.getByText('512.0 KB')).toBeInTheDocument()
@@ -73,18 +73,18 @@ describe('FileUpload', () => {
     renderWithProviders(<FileUpload onFileSelect={mockOnFileSelect} />)
     
     const largeFile = createMockAudioFile('large.mp3', 25 * 1024 * 1024) // 25 MB
-    const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+    const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
     
     fireEvent.change(input, { target: { files: [largeFile] } })
     
-    expect(screen.getByText(/Will use Files API/i)).toBeInTheDocument()
+    expect(screen.getByText(/Files APIを使用/i)).toBeInTheDocument()
   })
 
   it('removes file when remove button is clicked', () => {
     renderWithProviders(<FileUpload onFileSelect={mockOnFileSelect} />)
     
     const file = createMockAudioFile('test.mp3')
-    const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+    const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
     
     fireEvent.change(input, { target: { files: [file] } })
     expect(screen.getByText('test.mp3')).toBeInTheDocument()
@@ -94,24 +94,24 @@ describe('FileUpload', () => {
     
     expect(mockOnFileSelect).toHaveBeenLastCalledWith(null)
     expect(screen.queryByText('test.mp3')).not.toBeInTheDocument()
-    expect(screen.getByText(/Click to upload/i)).toBeInTheDocument()
+    expect(screen.getByText(/クリックしてアップロード/i)).toBeInTheDocument()
   })
 
   it('clears error when valid file is selected', () => {
     renderWithProviders(<FileUpload onFileSelect={mockOnFileSelect} />)
     
-    const input = screen.getByLabelText(/click to upload/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+    const input = screen.getByLabelText(/クリックしてアップロード/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement
     
     // First, cause an error
     const invalidFile = createMockAudioFile('test.txt', 1024, 'text/plain')
     fireEvent.change(input, { target: { files: [invalidFile] } })
-    expect(screen.getByText(/Invalid file format/i)).toBeInTheDocument()
+    expect(screen.getByText(/無効なファイル形式です/i)).toBeInTheDocument()
     
     // Then select a valid file
     const validFile = createMockAudioFile('test.mp3')
     fireEvent.change(input, { target: { files: [validFile] } })
     
-    expect(screen.queryByText(/Invalid file format/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/無効なファイル形式です/i)).not.toBeInTheDocument()
     expect(screen.getByText('test.mp3')).toBeInTheDocument()
   })
 })
