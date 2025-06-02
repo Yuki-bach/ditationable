@@ -2,6 +2,8 @@
 
 Google Gemini APIを使用したAI音声認識による話者分離機能付き文字起こしアプリケーション
 
+<img src="https://i.gyazo.com/9b2bbe6b7aac80d25922a8d0ef99a26b.png" alt="Dictationable アプリケーション画面" width="600">
+
 ## 機能
 
 - 🎙️ 話者分離機能付き音声ファイル文字起こし
